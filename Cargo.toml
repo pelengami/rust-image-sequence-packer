@@ -1,0 +1,7 @@
+[package]
+name = "rust-sprite-sheet-packer"
+version = "0.1.0"
+authors = ["Max Maslennikov <q.leklee@gmail.com>"]
+
+[dependencies]
+image = "*"
