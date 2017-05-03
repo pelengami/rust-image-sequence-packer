@@ -3,5 +3,11 @@ pub struct Parameters {
     pub output_texture_dimension: (u32, u32),
     pub padding: u32,
     pub tiling_x: u32,
-    pub tiling_y: u32
+    pub tiling_y: u32,
+    pub mode: Mode
+}
+
+pub enum Mode {
+    KeepAspectRatio,
+    NoKeepAspectRatio
 }

@@ -1,16 +1,14 @@
 extern crate image;
 
-use std::time::SystemTime;
-use std::env;
-
 mod parameters;
 mod image_read_writer;
 mod packer;
 
-fn main() {
-    use std::time::Instant;
-    let now = Instant::now();
+use std::time::SystemTime;
+use std::env;
+use parameters::Mode;
 
+fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         panic!()
@@ -26,13 +24,17 @@ fn main() {
         padding: 0,
         tiling_x: 2,
         tiling_y: 2,
+        mode: Mode::NoKeepAspectRatio,
     };
 
-    let packed_image = packer::pack(images.as_mut_slice(), &params);
+    use std::time::Instant;
+    let now = Instant::now();
 
-    image_read_writer::save_image(&packed_image, &target_path);
+    let packed_image = packer::pack(images.as_mut_slice(), &params);
 
     let elapsed = now.elapsed();
     let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
     println!("Seconds: {}", sec);
+
+    image_read_writer::save_image(&packed_image, &target_path);
 }

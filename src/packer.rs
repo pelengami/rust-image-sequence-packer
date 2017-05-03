@@ -4,30 +4,76 @@ use image::ImageBuffer;
 use image::DynamicImage;
 use image::imageops;
 use parameters::Parameters;
+use parameters::Mode;
 use std::cmp;
 
+use resize;
+use resize::Pixel::RGB24;
+use resize::Type::Lanczos3;
+
 pub fn pack(images: &mut [image::DynamicImage], params: &Parameters) -> image::RgbaImage {
-    let (min_x, min_y, max_x, max_y) = fin_bound_box_all(&images, &params);
+    let (min_x, min_y, max_x, max_y) = calc_trim_size_all(&images, &params);
 
     let (out_texture_width, out_texture_height) = params.output_texture_dimension;
 
-    let new_width = out_texture_width / params.tiling_x;
-    let new_height = out_texture_height / params.tiling_y;
-
-    let mut out_texture: image::RgbaImage = ImageBuffer::new(out_texture_width, out_texture_height);
+    let each_texture_width = out_texture_width / params.tiling_x;
+    let each_texture_height = out_texture_height / params.tiling_y;
 
     let croped_images = crop_images(images, min_x, min_y, max_x, max_y);
+
+    let packed_texture: image::RgbaImage;
+
+    match params.mode {
+        Mode::KeepAspectRatio => {
+            packed_texture = pack_keep_aspect_ratio(each_texture_width, each_texture_height, out_texture_width, out_texture_height, &croped_images)
+        }
+        Mode::NoKeepAspectRatio => {
+            packed_texture = pack_no_keep_aspect_ratio(each_texture_width, each_texture_height, out_texture_width, out_texture_height, &croped_images)
+        }
+    }
+
+    packed_texture
+}
+
+fn pack_no_keep_aspect_ratio(each_texture_width: u32, each_texture_height: u32, out_texture_width: u32, out_texture_height: u32, croped_images: &[image::DynamicImage]) -> image::RgbaImage {
+    let mut out_texture: image::RgbaImage = ImageBuffer::new(out_texture_width, out_texture_height);
 
     let mut hor_step = 0;
     let mut vert_step = 0;
 
-    for img in &croped_images {
-        let resized_img = img.resize(new_width, new_height, imageops::FilterType::CatmullRom);
+    for img in croped_images {
+        let resized_image = img.resize_exact(each_texture_width, each_texture_height, imageops::FilterType::Lanczos3);
+
+        for i in 0..each_texture_width {
+            for j in 0..each_texture_height {
+                let pixel = resized_image.get_pixel(i, j);
+                out_texture.put_pixel(hor_step + i, vert_step + j, pixel);
+            }
+        }
+
+        hor_step += each_texture_width;
+        if hor_step + each_texture_width > out_texture_width {
+            hor_step = 0;
+            vert_step += each_texture_height;
+        }
+    }
+
+    out_texture
+}
+
+fn pack_keep_aspect_ratio(each_texture_width: u32, each_texture_height: u32, out_texture_width: u32, out_texture_height: u32, croped_images: &[image::DynamicImage]) -> image::RgbaImage {
+    let mut out_texture: image::RgbaImage = ImageBuffer::new(out_texture_width, out_texture_height);
+
+    let mut hor_step = 0;
+    let mut vert_step = 0;
+
+    for img in croped_images {
+        let resized_img = img.resize(each_texture_width, each_texture_height, imageops::FilterType::Lanczos3);
 
         let (resized_img_width, resized_img_height) = resized_img.dimensions();
 
-        let hor_padding = new_width - resized_img_width;
-        let vert_padding = new_height - resized_img_height;
+        let hor_padding = each_texture_width - resized_img_width;
+        let vert_padding = each_texture_height - resized_img_height;
 
         for i in hor_padding / 2..resized_img_width {
             for j in vert_padding / 2..resized_img_height {
@@ -46,7 +92,7 @@ pub fn pack(images: &mut [image::DynamicImage], params: &Parameters) -> image::R
     out_texture
 }
 
-fn fin_bound_box_all(images: &[image::DynamicImage], params: &Parameters) -> (u32, u32, u32, u32) {
+fn calc_trim_size_all(images: &[image::DynamicImage], params: &Parameters) -> (u32, u32, u32, u32) {
     let mut min_x: u32 = <u32>::max_value();
     let mut max_x: u32 = 0;
 
@@ -54,7 +100,7 @@ fn fin_bound_box_all(images: &[image::DynamicImage], params: &Parameters) -> (u3
     let mut max_y: u32 = 0;
 
     for img in images {
-        let (temp_min_x, temp_min_y, temp_max_x, temp_max_y) = find_bound_box(img, &params);
+        let (temp_min_x, temp_min_y, temp_max_x, temp_max_y) = calc_trim_size(img, &params);
 
         min_x = cmp::min(min_x, temp_min_x);
         min_y = cmp::min(min_y, temp_min_y);
@@ -76,7 +122,7 @@ fn crop_images(images: &mut [image::DynamicImage], min_x: u32, min_y: u32, max_x
     sub_images
 }
 
-fn find_bound_box(image: &image::DynamicImage, params: &Parameters) -> (u32, u32, u32, u32) {
+fn calc_trim_size(image: &image::DynamicImage, params: &Parameters) -> (u32, u32, u32, u32) {
     let mut min_x: u32 = image.dimensions().0;
     let mut max_x: u32 = 0;
 
