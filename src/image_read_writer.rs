@@ -5,17 +5,9 @@ use std::path::Path;
 use std::ffi::OsStr;
 use std::ops::Add;
 
-pub fn get_all_images(directoryPath: &String) -> Vec<image::DynamicImage> {
-    let images_path = get_images_paths(directoryPath);
-
-    let mut images = vec!();
-
-    for image_path in images_path {
-        let img = image::open(&Path::new(&image_path)).unwrap();
-        images.push(img);
-    }
-
-    images
+pub fn open_image(path: &String) -> image::DynamicImage {
+    let image = image::open(&Path::new(&path)).unwrap();
+    image
 }
 
 pub fn save_image(image: &image::RgbaImage, path: &String) {
