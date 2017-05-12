@@ -4,7 +4,7 @@ use image::ImageBuffer;
 use image::DynamicImage;
 use image::imageops;
 use parameters::Parameters;
-use parameters::ResizeMode;
+use resize_mode::ResizeMode;
 use std::cmp;
 
 pub fn pack(images: &mut [image::DynamicImage], params: &Parameters) -> image::RgbaImage {
@@ -12,8 +12,8 @@ pub fn pack(images: &mut [image::DynamicImage], params: &Parameters) -> image::R
 
     let (out_texture_width, out_texture_height) = params.out_texture_size;
 
-    let each_texture_width = out_texture_width / params.sprite_sheet_size_x;
-    let each_texture_height = out_texture_height / params.sprite_sheet_size_y;
+    let each_texture_width = out_texture_width / params.columns;
+    let each_texture_height = out_texture_height / params.rows;
 
     let croped_images = crop_images(images, min_x, min_y, max_x, max_y);
 
@@ -46,8 +46,8 @@ fn pack_images(each_texture_width: u32, each_texture_height: u32, out_texture_wi
             }
         }
 
-        for i in 0..resized_img_width {
-            for j in 0..resized_img_height {
+        for j in 0..resized_img_height {
+            for i in 0..resized_img_width {
                 let pixel = resized_image.get_pixel(i, j);
                 out_texture.put_pixel(h_step + i, v_step + j, pixel);
             }
@@ -117,8 +117,8 @@ fn calc_trim_size_alpha(image: &image::DynamicImage, params: &Parameters) -> (u3
 
     let (width, height) = image.dimensions();
 
-    for i in 0..width {
-        for j in 0..height {
+    for j in 0..height {
+        for i in 0..width {
             let pixel = image.get_pixel(i, j);
             let alpha = pixel[3];
 

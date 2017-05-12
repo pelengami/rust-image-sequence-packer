@@ -2,23 +2,22 @@
 
 extern crate image;
 
-mod parameters;
-mod resize_mode;
-mod image_read_writer;
-mod packer;
-mod stop_watch;
+pub mod parameters;
+pub mod resize_mode;
+pub mod image_read_writer;
+pub mod packer;
+pub mod stop_watch;
 
 use image::DynamicImage;
 
-#[no_mangle]
-pub extern "C" fn pack(images_path: Vec<String>, alpha_threshold: u8, out_texture_width: u32, out_texture_height: u32, padding: u32, size_x: u32, size_y: u32, resize_mode: resize_mode::ResizeMode) -> Vec<u8> {
+pub fn pack(images_path: &[String], output_image_path: &String, alpha_threshold: u8, out_texture_width: u32, out_texture_height: u32, padding: u32, size_x: u32, size_y: u32) {
     let params = parameters::Parameters {
         alpha_threshold: alpha_threshold,
         out_texture_size: (out_texture_width, out_texture_height),
         padding: padding,
-        sprite_sheet_size_x: size_x,
-        sprite_sheet_size_y: size_y,
-        resize_mode: resize_mode,
+        columns: size_x,
+        rows: size_y,
+        resize_mode: resize_mode::ResizeMode::NoKeepAspectRatio,
     };
 
     let mut images = vec!();
@@ -30,5 +29,5 @@ pub extern "C" fn pack(images_path: Vec<String>, alpha_threshold: u8, out_textur
 
     let packed_image = packer::pack(images.as_mut_slice(), &params);
 
-    packed_image.into_vec()
+    packed_image.save(output_image_path);
 }
