@@ -16,7 +16,7 @@ pub fn save_image(image: &image::RgbaImage, path: &String) {
     let _ = image.save(&save_path).unwrap();
 }
 
-fn get_images_paths(directoryPath: &String) -> Vec<String> {
+pub fn get_images_paths(directoryPath: &String) -> Vec<String> {
     let mut res_paths = vec!();
 
     let paths = fs::read_dir(directoryPath).unwrap();

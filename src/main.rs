@@ -13,17 +13,17 @@ fn main() {
 
     let params = Parameters {
         alpha_threshold: 100,
-        out_texture_size: (256, 256),
+        out_texture_size: (512, 512),
         padding: 20,
         columns: 2,
-        rows: 1,
+        rows: 2,
         resize_mode: ResizeMode::NoKeepAspectRatio,
     };
 
     let args: Vec<String> = env::args().collect();
 
-    let images_path = vec![args[2].parse().unwrap(), args[3].parse().unwrap()];
-    let output_image_path: String = args[4].parse().unwrap();
+    let images_path = image_read_writer::get_images_paths(&args[2].parse().unwrap());
+    let output_image_path: String = args[3].parse().unwrap();
 
     let mut images = vec!();
 
